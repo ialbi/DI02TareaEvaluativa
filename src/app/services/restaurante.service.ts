@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, getDocs, addDoc, deleteDoc, doc } from '@angular/fire/firestore';
+import { Firestore, collection, getDocs, addDoc, deleteDoc, doc, setDoc } from '@angular/fire/firestore';
 import { Restaurante } from '../interface/restaurante';
 
 @Injectable({ providedIn: 'root' })
@@ -26,7 +26,24 @@ export class RestauranteService {
       snapshot.docs.map(d => deleteDoc(doc(this.firestore, this.COLECCION, d.id)))
     );
   }
+  /* H3.3 - Control y libertad del usuario.
+  Restaura un restaurante eliminado manteniendo
+  su ID original de Firebase. */
+  async restore(restaurante: Restaurante): Promise<void> {
+    if (!restaurante.id) {
+      throw new Error('El restaurante no tiene ID');
+    }
 
+    const documento = doc(
+      this.firestore,
+      this.COLECCION,
+      restaurante.id
+    );
+
+    const { id, ...datos } = restaurante;
+
+    await setDoc(documento, datos);
+  }
   /* Añade un array de restaurantes a la colección, 
      H1.1 - Visibilidad del estado del sistema.
      Callback que informa del número de restaurantes

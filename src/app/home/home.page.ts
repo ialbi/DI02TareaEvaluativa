@@ -150,7 +150,7 @@ restaurantesOrdenados = computed(() => {
           text: 'Deshacer',
           handler: async () => {
             try {
-              await this.restauranteService.add(restaurante);
+              await this.restauranteService.restore(restaurante);
               await this.cargarDatos();
               await this.mostrarToast('Restaurante recuperado', 'success');
             } catch (error) {
