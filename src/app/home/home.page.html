@@ -1,0 +1,326 @@
+<ion-header>
+  <ion-toolbar>
+    <!-- H2.3 - Lenguaje descriptivo con emoji -->
+    <ion-title><ion-icon [icon]="restaurantIcon"></ion-icon>Guía de Restaurantes Euskadi</ion-title>
+    <ion-buttons slot="end">
+      <!-- H4.1 - Todos los botones del header: icono + texto corto-->
+      <!--H10.2 — Ayuda y documentación. Tooltips de botones-->
+      <ion-button (click)="abrirModalAnadir()" [disabled]="cargando() || importando()"
+        title="Añadir un restaurante nuevo">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Añadir
+      </ion-button>
+      <!-- H2.2 - Utilizamos lenguaje comprensible, evitando tecnicismos. -->
+      <!--H8.4 — Diseño estético y minimalista. Spinner durante operaciones -->
+      <ion-button (click)="confirmarImportacion()" [disabled]="cargando() || importando()"
+        title="Sustituir los restaurantes actuales por la lista original">
+        @if (importando()) {
+        <ion-spinner name="crescent" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+        }
+        <ion-icon slot="start" [icon]="cloudIcon"></ion-icon>
+        Actualizar
+      </ion-button>
+      <!-- H2.2 - Utilizamos lenguaje comprensible, evitando tecnicismos. -->
+      <ion-button (click)="cargarDatos()" [disabled]="cargando() || importando()"
+        title="Cargar restaurantes desde el servidor">
+        @if (cargando()) {
+        <ion-spinner name="crescent" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+        }
+        <ion-icon slot="start" [icon]="restaurantIcon"></ion-icon>
+        Cargar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="ion-padding">
+  <!-- H3.1 - Control y libertad del usuario Botón "Limpiar todos los filtros" 	Resetea textoBusqueda, territorioSeleccionado, localidadesSeleccionadas-->
+  <!-- H8 — Diseño estético y minimalista. Si no hay filtros, el botón no tiene sentido y ocupa espacio -->
+  @if (hayFiltrosActivos()) {
+  <ion-button expand="block" fill="outline" color="danger" (click)="limpiarTodosFiltros()">
+    <ion-icon slot="start" [icon]="closeCircleIcon"></ion-icon>
+    Limpiar todos los filtros
+  </ion-button>
+  }
+  <!-- Añadir mensaje cuando no hay datos -->
+  <!-- H10.1 — Ayuda y documentación. Mensaje de bienvenida. Solo en el primer uso o cuando no hay datos-->
+  <!-- H8.1 — Diseño estético y minimalista. Texto de ayuda inicial-->
+  @if (!hayDatos()) {
+  <ion-item lines="none" color="light" style="border-radius: 8px;">
+    <ion-label class="ion-text-wrap">
+      Pulsa <strong>Cargar datos</strong> para ver los restaurantes disponibles.
+      Una vez cargados, podrás filtrar por nombre, territorio y localidad.
+    </ion-label>
+  </ion-item>
+  }
+
+  <!-- Filtros -->
+  <ion-grid>
+    <ion-row class="ion-align-items-center ion-justify-content-start">
+      <!-- Filtro de búsqueda -->
+      <!-- H7.1 — Flexibilidad y eficiencia de uso. Buscador de texto libre -->
+      <ion-col size="12" size-md="3">
+        <ion-item>
+          <ion-input label="Buscar" placeholder="Buscar por nombre..." [value]="textoBusqueda()"
+            [disabled]="!hayDatos()" (ionInput)="textoBusqueda.set($event.detail.value ?? '')">
+          </ion-input>
+        </ion-item>
+      </ion-col>
+
+      <!-- Filtro de territorio -->
+      <!-- H7.2 — Flexibilidad y eficiencia de uso. Filtro por territorio -->
+      <ion-col size="12" size-md="3">
+        <!--Podemos usar un ion-label para el título del filtro, pero podemos también usar el label del ion-select
+          --De esta manera podemos hacer click encima de todo el ion-item para mostrar los valores. 
+          --Si ponemos el ion-label fuera del ion-item, el click solo se activará al hacer click en el texto del label, lo que no es tan cómodo para el usuario
+          -->
+        <!--<ion-label>Territorio</ion-label>-->
+        <ion-item>
+          <ion-select label="Territorio" labelPlacement="start" placeholder="Todos" [value]="territorioSeleccionado()"
+            [disabled]="!hayDatos() || localidadesSeleccionadas().length > 0"
+            (ionChange)="onTerritorioChange($event.detail.value)">
+            @for (t of territoriosFiltrados(); track t) {
+            <ion-select-option [value]="t">{{ t }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+      </ion-col>
+      <!-- H7.3 — Flexibilidad y eficiencia de uso. Filtro por localidades multiples -->
+      <!-- Filtro de localidad (dependiente del territorio) -->
+      <ion-col size="12" size-md="6">
+        <!--Podemos usar un ion-label para el título del filtro, pero podemos también usar el label del ion-select
+          --De esta manera podemos hacer click encima de todo el ion-item para mostrar los valores. 
+          --Si ponemos el ion-label fuera del ion-item, el click solo se activará al hacer click en el texto del label, lo que no es tan cómodo para el usuario
+          -->
+        <!--Si tenemos muchas localidades seleccionadas, estas se recortan mediante..., por eso añadimos [title] para mostrar un tooltip cuando ponemos el ratón sobre ella -->
+        <!--<ion-label>Localidad</ion-label>-->
+        
+        <ion-item>
+          <ion-select label="Localidad" labelPlacement="start" placeholder="Todas" multiple="true" cancelText="Cancelar"
+            okText="Aceptar" [value]="localidadesSeleccionadas()"
+            [title]="localidadesSeleccionadas().length > 0 ? localidadesSeleccionadas().join(', ') : 'Todas'"
+            [disabled]="!hayDatos()" (ionChange)="onLocalidadesChange($event.detail.value)">
+            @for (loc of localidadesFiltradasPorTerritorio(); track loc) {
+            <ion-select-option [value]="loc">{{ loc }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  <!-- H3.2 - Control y libertad del usuario.Permite quitar localidades individualmente. -->
+  <!-- H4.2 - Consistencia y estándares.El territorio permanece visible y utiliza la misma X que las localidades cuando puede eliminarse. -->
+  <!-- H6.1 - Reconocimiento antes que recuerdo.Todos los filtros activos se muestran juntos. -->
+  <!-- H8.5 — Diseño estético y minimalista. Solo aparecen cuando hayFiltrosActivos() -->
+  @if (textoBusqueda().trim() || territorioSeleccionado() || localidadesSeleccionadas().length > 0) {
+
+  <div class="chips-localidades">
+
+    <!-- H6.1 - Mostramos el texto que está filtrando los resultados. -->
+    @if (textoBusqueda().trim()) {
+    <ion-chip color="primary">
+
+      <ion-label>
+        Buscar: {{ textoBusqueda() }}
+      </ion-label>
+
+      <ion-icon [icon]="closeCircleIcon" (click)="textoBusqueda.set('')" aria-label="Quitar filtro de búsqueda">
+      </ion-icon>
+
+    </ion-chip>
+    }
+
+    @if (territorioSeleccionado()) {
+
+    @if (localidadesSeleccionadas().length > 0) {
+
+    <!-- Territorio bloqueado mientras haya localidades -->
+    <ion-chip color="medium" title="Para quitar el territorio, elimina primero las localidades seleccionadas">
+
+      <ion-icon [icon]="lockIcon" aria-hidden="true"></ion-icon>
+
+      <ion-label>
+        Territorio: {{ territorioSeleccionado() }}
+      </ion-label>
+
+    </ion-chip>
+
+    } @else {
+
+    <!-- Territorio desbloqueado: aparece la X -->
+    <ion-chip color="primary">
+
+      <ion-label>
+        Territorio: {{ territorioSeleccionado() }}
+      </ion-label>
+
+      <ion-icon [icon]="closeCircleIcon" (click)="quitarTerritorio()"
+        [attr.aria-label]="'Quitar filtro de territorio ' + territorioSeleccionado()">
+      </ion-icon>
+
+    </ion-chip>
+
+    }
+    }
+
+    <!-- Chips de localidades -->
+    @for (localidad of localidadesSeleccionadas(); track localidad) {
+
+    <ion-chip color="primary">
+
+      <ion-label>{{ localidad }}</ion-label>
+
+      <ion-icon [icon]="closeCircleIcon" (click)="quitarLocalidad(localidad)"
+        [attr.aria-label]="'Quitar filtro de ' + localidad">
+      </ion-icon>
+
+    </ion-chip>
+
+    }
+
+  </div>
+  }
+  <!-- Contador de restaurantes filtrados -->
+  @if (hayDatos()) {
+  <ion-item lines="none">
+    <ion-label>
+      Mostrando <strong>{{ restaurantesFiltrados().length }}</strong>
+      de <strong>{{ restaurantesCargados().length }}</strong> restaurantes
+      @if (restaurantesFiltrados().length === 0 && hayFiltrosActivos()) {
+      · <em>Prueba a cambiar los filtros</em>
+      }
+    </ion-label>
+  </ion-item>
+  }
+
+  <!-- Tabla de restaurantes -->
+  @if (restaurantesFiltrados().length > 0) {
+  <div class="table-wrapper">
+    <table class="restaurantes-table">
+      <thead>
+        <tr>
+          <!-- H6.2 - La flecha indica el criterio de orden activo. -->
+          <th>
+            <ion-button fill="clear" size="small" class="boton-ordenar" (click)="cambiarOrden()">
+
+              Nombre
+
+              <ion-icon slot="end" [icon]="ordenAscendente() ? flechaArriba : flechaAbajo" aria-hidden="true">
+              </ion-icon>
+
+            </ion-button>
+          </th>
+          <th>Localidad</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+          <th>Territorio</th>
+          <th>Web</th>
+          <th><ion-icon slot="start" name="star" color="warning" aria-hidden="true"></ion-icon>Estrellas Michelin</th>
+          <th><ion-icon slot="start" name="sunny" color="danger" aria-hidden="true"></ion-icon>Soles Repsol</th>
+          <th>Borrar</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of restaurantesOrdenados(); track r.documentName) {
+        <tr>
+          <td class="col-nombre">{{ r.documentName }}</td>
+          <td>{{ r.locality }}</td>
+          <td class="col-direccion">{{ r.address }}</td>
+          <td class="col-phone">{{ r.phone }}</td>
+          <td>{{ r.territory }}</td>
+          <td class="center">
+            @if (r.web) {
+            <!-- H2.1 - El icono de globo representa el acceso a una página web. -->
+            <a [href]="r.web" target="_blank" rel="noopener noreferrer" [title]="'Visitar la web de ' + r.documentName"
+              [attr.aria-label]="'Visitar la web de ' + r.documentName" class="web-link">
+
+              <ion-icon name="globe-outline" aria-hidden="true"></ion-icon>
+
+            </a>
+            }
+          </td>
+          <!-- H2.1 - Representamos los premios Michelin mediante estrellas. -->
+          <td class="center">
+            @for (estrella of [1, 2, 3]; track estrella) {
+            @if (estrella <= estrellasMichelin(r)) { <ion-icon name="star" color="warning" aria-hidden="true">
+              </ion-icon>
+              }
+              }
+
+              @if (estrellasMichelin(r) === 0) {
+              -
+              }
+          </td>
+          <!-- H2.1 - Representamos los soles Repsol mediante iconos de sol. -->
+          <td class="center">
+            @for (sol of [1, 2, 3]; track sol) {
+            @if (sol <= repsolSoles(r)) { <ion-icon name="sunny" color="danger" aria-hidden="true">
+              </ion-icon>
+              }
+              }
+
+              @if (repsolSoles(r) === 0) {
+              -
+              }
+          </td>
+          <td>
+            <!-- H2.1 - La papelera representa la acción de eliminar. -->
+            <ion-button fill="clear" color="danger" size="small" title="Borrar restaurante"
+              [attr.aria-label]="'Borrar ' + r.documentName" (click)="borrarRestaurante(r)">
+
+              <ion-icon slot="icon-only" [icon]="trashIcon" aria-hidden="true">
+              </ion-icon>
+
+            </ion-button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @else {
+  <!-- Mensaje cuando no hay restaurantes que coincidan con los filtros -->
+  <!-- H9.5 — Reconocer, diagnosticar y recuperarse de errores. Filtro sin resultados-->
+  <!-- H8.3 — Diseño estético y minimalista. No aparece en el estado inicial, solo cuando el filtro ha vaciado la tabla-->
+  <!-- H8.5 — Diseño estético y minimalista. si no hay resultados no aparece la tabla -->
+  @if (hayDatos()) {
+  <ion-item lines="none" color="warning" style="margin-top: 16px; border-radius: 8px;">
+    <ion-label class="ion-text-wrap">
+      Ningún restaurante coincide con los filtros.
+      <strong style="cursor: pointer; text-decoration: underline;" (click)="limpiarTodosFiltros()">
+        Limpiar filtros
+      </strong>
+    </ion-label>
+  </ion-item>
+  }
+  }
+
+</ion-content>
+
+<!-- H1.1 - Visibilidad del estado del sistema.
+     Modal con barra de progreso real para informar
+     del avance de la importación de restaurantes. -->
+
+<ion-modal class="modal-progreso" [isOpen]="subiendo()" [backdropDismiss]="false" [canDismiss]="!subiendo()">
+
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Importando restaurantes</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+
+
+      <p>
+        Importando {{ importados() }}
+        de {{ restaurantes.length }} restaurantes
+      </p>
+
+      <ion-progress-bar [value]="progreso()"></ion-progress-bar>
+
+      <p>{{ (progreso() * 100).toFixed(0) }}% completado</p>
+
+    </ion-content>
+  </ng-template>
+</ion-modal>

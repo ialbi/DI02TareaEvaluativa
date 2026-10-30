@@ -1,0 +1,123 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Añadir Restaurante</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancelar()" [disabled]="guardando()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <ion-list lines="full">
+
+      <!-- Nombre -->
+      <!-- H5.1 - Prevención de errores. El nombre es obligatorio -->
+      <!-- H10.5 — Ayuda y documentación. Mensajes de validación inline-->
+      <ion-item>
+        <ion-input label="Nombre *" labelPlacement="stacked" placeholder="Nombre del restaurante"
+          formControlName="documentName">
+        </ion-input>
+      </ion-item>
+      @if (form.get('documentName')?.invalid && form.get('documentName')?.touched) {
+      <ion-text color="danger" class="ion-padding-start">
+        <small>El nombre es obligatorio</small>
+      </ion-text>
+      }
+
+      <!-- Territorio -->
+      <!-- H5.2 - Prevención de errores.
+     El usuario solo puede elegir uno de los tres territorios válidos,
+     evitando errores al escribir y problemas en los filtros. -->
+
+<!-- Territorio -->
+<ion-item>
+  <ion-select
+    label="Territorio *"
+    labelPlacement="stacked"
+    placeholder="Selecciona un territorio"
+    formControlName="territory"
+    interface="alert">
+
+    <ion-select-option value="Araba">Araba</ion-select-option>
+    <ion-select-option value="Bizkaia">Bizkaia</ion-select-option>
+    <ion-select-option value="Gipuzkoa">Gipuzkoa</ion-select-option>
+
+  </ion-select>
+</ion-item>
+
+@if (form.get('territory')?.invalid &&
+     (form.get('territory')?.touched || form.get('territory')?.dirty)) {
+  <ion-text color="danger" class="ion-padding-start">
+    <small>Selecciona un territorio.</small>
+  </ion-text>
+}
+      <!--H10.3 — Ayuda y documentación. Placeholders orientativos-->
+      <!-- Localidad -->
+      <ion-item>
+        <ion-input label="Localidad" labelPlacement="stacked" placeholder="Ej: Bilbao" formControlName="locality">
+        </ion-input>
+      </ion-item>
+
+      <!-- Dirección -->
+      <ion-item>
+        <ion-input label="Dirección" labelPlacement="stacked" placeholder="Calle y número" formControlName="address">
+        </ion-input>
+      </ion-item>
+
+      <!-- Teléfono -->
+      <ion-item>
+        <ion-input label="Teléfono" labelPlacement="stacked" type="tel" placeholder="9XXXXXXXX" formControlName="phone">
+        </ion-input>
+      </ion-item>
+
+      <!-- Web -->
+      <ion-item>
+        <ion-input label="Web" labelPlacement="stacked" type="url" placeholder="https://..." formControlName="web">
+        </ion-input>
+      </ion-item>
+      <!--H10.4 — Ayuda y documentación. Etiquetas con rango (0-3)-->
+      <!-- Estrellas Michelin -->
+      <ion-item>
+        <ion-input label="Estrellas Michelin (0-3)" labelPlacement="stacked" type="number" min="0" max="3"
+          formControlName="michelinStar">
+        </ion-input>
+      </ion-item>
+      <!-- H5.3 - Prevención de errores: rango válido de estrellas. -->
+       
+      @if (form.get('michelinStar')?.invalid && form.get('michelinStar')?.touched) {
+      <ion-text color="danger" class="ion-padding-start">
+        <small>Introduce un número entre 0 y 3.</small>
+      </ion-text>
+      }
+
+      <!-- Soles Repsol -->
+      <ion-item>
+        <ion-input label="Soles Repsol (0-3)" labelPlacement="stacked" type="number" min="0" max="3"
+          formControlName="repsolSun">
+        </ion-input>
+      </ion-item>
+      <!-- H5.3 - Prevención de errores: rango válido de soles. -->
+      @if (form.get('repsolSun')?.invalid && form.get('repsolSun')?.touched) {
+      <ion-text color="danger" class="ion-padding-start">
+        <small>Introduce un número entre 0 y 3.</small>
+      </ion-text>
+      }
+
+    </ion-list>
+
+    <div class="ion-padding-top">
+      <ion-button expand="block" type="submit" [disabled]="form.invalid || guardando()">
+        @if (guardando()) {
+        <ion-spinner name="crescent" slot="start"></ion-spinner>
+        Guardando...
+        } @else {
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Guardar en Firebase
+        }
+      </ion-button>
+    </div>
+
+  </form>
+</ion-content>

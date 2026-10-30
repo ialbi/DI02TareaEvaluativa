@@ -1,0 +1,7 @@
+{
+  "name": "DI02_TareaEvaluativa",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
